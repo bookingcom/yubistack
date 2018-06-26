@@ -1,0 +1,28 @@
+debug = true
+
+[[ykksm.retrievers]]
+name = "hex"
+
+[ykksm.mysql]
+host = "0.0.0.0"
+port = 3306
+name = "ykksm"
+user = "root"
+password = "some_password"
+
+[ykval.mysql]
+host = "0.0.0.0"
+port = 3306
+name = "ykval"
+user = "root"
+password = "some_password"
+
+[ykauth]
+client_id = 1
+
+[ykauth.mysql]
+host = "0.0.0.0"
+port = 3306
+name = "yubiauth"
+user = "root"
+password = "some_password"

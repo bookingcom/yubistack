@@ -1,0 +1,13 @@
+/yubistack
+/yubiksm
+/yubival
+/coverage.out
+
+examples/ykksm/ykksm.*
+
+examples/ykval/ykksm.*
+examples/ykval/ykval.*
+
+examples/ykauth/ykksm.*
+examples/ykauth/ykval.*
+examples/ykauth/ykauth.*

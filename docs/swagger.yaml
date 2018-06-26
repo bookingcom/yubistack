@@ -1,0 +1,280 @@
+swagger: "2.0"
+info:
+  description: "This is a simple implementation of the Yubico specification for OTP validation."
+  version: "1.0.0"
+  title: "Yubistack API"
+  license:
+    name: "Apache-2.0 License."
+    url: "https://www.apache.org/licenses/LICENSE-2.0"
+externalDocs:
+  description: "Find out more about Yubico"
+  url: "https://developers.yubico.com/OTP/Specifications/"
+host: "yubistack.com"
+basePath: "/wsapi/2.0"
+tags:
+  - name: "decrypt"
+    description: "Decrypt an OTP."
+    externalDocs:
+      description: "Find out more"
+      url: "https://developers.yubico.com/yubikey-ksm/Decryption_Protocol.html"
+  - name: "verify"
+    description: "Verify an OTP."
+    externalDocs:
+      description: "Find out more"
+      url: "https://developers.yubico.com/yubikey-val/Validation_Protocol_V2.0.html"
+  - name: "sync"
+    description: "Synchronize servers."
+    externalDocs:
+      description: "Find out more"
+      url: "https://developers.yubico.com/yubikey-val/Server_Replication_Protocol.html"
+  - name: "authenticate"
+    description: >-
+      Authenticate a user. Provide a GET and POST endpoints with the same behavior.
+      All arguments can be passed either as query string or in body of request.
+schemes:
+  - "https"
+  - "http"
+paths:
+  /decrypt:
+    get:
+      tags:
+        - "decrypt"
+      summary: "Decrypt an OTP"
+      description: ""
+      operationId: "decrypt"
+      produces:
+        - "text/plain"
+      parameters:
+        - in: "query"
+          name: "otp"
+          description: "The OTP provided by a Yubikey tap, to be decrypted by server."
+          required: true
+          type: "string"
+      responses:
+        400:
+          description: "Invalid OTP supplied."
+          schema:
+            type: "string"
+            pattern: '^ERR .*$'
+            example: "ERR Invalid OTP format"
+        200:
+          description: "Valid OTP"
+          schema:
+            type: "string"
+            pattern: '^OK counter=\x{4} low=\x{4} high=\x{2} use=\x{4}$'
+            example: "OK counter=000f low=c541 high=a7 use=04"
+        500:
+          description: "Something went bad."
+          schema:
+            type: "string"
+            pattern: '^ERR .*$'
+            example: "ERR BACKEND_ERROR"
+  /verify:
+    get:
+      tags:
+        - "verify"
+      summary: "Verify an OTP"
+      description: "This is a slightly modified version of the verify endpoint. Making the parameters naming consistent mostly."
+      operationId: "verify"
+      produces:
+        - "text/plain"
+      parameters:
+        - in: "query"
+          name: "id"
+          description: "Specifies the requestor so that the end-point can retrieve correct shared secret for signing the response."
+          required: true
+          type: "string"
+        - in: "query"
+          name: "otp"
+          description: "The OTP provided by a Yubikey tap, to be verified by server."
+          required: true
+          type: "string"
+        - in: "query"
+          name: "hash"
+          description: "The optional HMAC-SHA1 signature for the request."
+          type: "string"
+        - in: "query"
+          name: "timestamp"
+          description: "Timestamp=1 requests timestamp and session counter information in the response."
+          type: "boolean"
+        - in: "query"
+          name: "nonce"
+          description: "A 16 to 40 character long string with random unique data."
+          type: "string"
+          required: true
+        - in: "query"
+          name: "sync"
+          description: "A value 0 to 100 indicating percentage of syncing required by client, or strings \"fast\" or \"secure\" to use server-configured values; if absent, let the server decide."
+          type: "string"
+        - in: "query"
+          name: "timeout"
+          description: "Number of seconds to wait for sync responses; if absent, let the server decide."
+          type: "integer"
+      responses:
+        400:
+          description: "Validation of OTP failed, may be due to bad request or security hazard."
+          schema:
+            type: "string"
+            pattern: '^ERR .*$'
+            example: 'ERR BAD_OTP'
+        200:
+          description: "Validation of OTP succeeded."
+          schema:
+            type: "string"
+            pattern: "^OK timestamp=%d (counter=%d use=%d)?$"
+            example: "OK timestamp=1554473625 counter=0013 use=11"
+        500:
+          description: "Something went bad."
+          schema:
+            type: "string"
+            pattern: '^ERR .*$'
+            example: 'ERR BACKEND_ERROR'
+  /sync:
+    get:
+      tags:
+        - "sync"
+      summary: "Synchronize current server."
+      description: >-
+        This is a slightly modified version of the sync endpoint.
+        Enforcing security by making the hash required.
+        Also making the parameters naming consistent mostly.
+      operationId: "sync"
+      produces:
+        - "text/plain"
+      parameters:
+        - in: "query"
+          name: "id"
+          description: "Specifies the requestor so that the end-point can retrieve correct shared secret for signing the response."
+          required: true
+          type: "string"
+        - in: "query"
+          name: "otp"
+          description: "The OTP provided by a Yubikey tap, will be used for logging."
+          required: true
+          type: "string"
+        - in: "query"
+          name: "modified"
+          description: "Unix timestamp of when OTP was received."
+          required: true
+          type: "string"
+        - in: "query"
+          name: "hash"
+          description: "The HMAC-SHA1 signature for the request."
+          required: true
+          type: "string"
+        - in: "query"
+          name: "nonce"
+          description: "A 16 to 40 character long string with random unique data."
+          type: "string"
+          required: true
+        - in: "query"
+          name: "counter"
+          description: "Last seen session counter by sender."
+          type: "integer"
+          required: true
+        - in: "query"
+          name: "use"
+          description: "Last seen session use by sender."
+          type: "integer"
+          required: true
+        - in: "query"
+          name: "high"
+          description: "OTP internal high time value."
+          type: "integer"
+          required: true
+        - in: "query"
+          name: "low"
+          description: "OTP internal low time value."
+          type: "integer"
+          required: true
+      responses:
+        400:
+          description: "Sync failed due to a bad request sending."
+          schema:
+            type: "string"
+            pattern: '^ERR .*$'
+            example: 'ERR BAD_OTP'
+        200:
+          description: "Validation of OTP succeeded."
+          schema:
+            type: "string"
+            pattern: "OK counter=%d use=%d high=%d low=%d"
+            example: "OK counter=19 use=17 high=155 low=49712"
+        500:
+          description: "Something went bad."
+          schema:
+            type: "string"
+            pattern: '^ERR .*$'
+            example: "ERR BACKEND_ERROR"
+  /authenticate:
+    parameters:
+      - in: "query"
+        name: "username"
+        description: "The name of the user to authenticate."
+        required: true
+        type: "string"
+      - in: "query"
+        name: "password"
+        description: >-
+          The password to enforce user authentication.
+          If provided it will be enforced, otherwise, it will not be checked.
+        type: "string"
+      - in: "query"
+        name: "otp"
+        description: "The OTP provided by a Yubikey tap, will be used for logging."
+        required: true
+        type: "string"
+    get:
+      tags:
+        - "authenticate"
+      summary: "Authenticate a given user."
+      description: ""
+      operationId: "authenticate.get"
+      produces:
+        - "text/plain"
+
+      responses:
+        400:
+          description: "Invalid credentials provided."
+          schema:
+            type: "string"
+            pattern: '^ERR .*$'
+            example: "ERR INVALID_OTP"
+        200:
+          description: "User successfully authenticated."
+          schema:
+            type: "string"
+            example: "OK"
+        500:
+          description: "Something went bad."
+          schema:
+            type: "string"
+            pattern: '^ERR .*$'
+            example: "ERR BACKEND_ERROR"
+    post:
+      tags:
+        - "authenticate"
+      summary: "Authenticate a given user."
+      description: ""
+      operationId: "authenticate.post"
+      produces:
+        - "text/plain"
+
+      responses:
+        400:
+          description: "Invalid credentials provided."
+          schema:
+            type: "string"
+            pattern: '^ERR .*$'
+            example: "ERR INVALID_OTP"
+        200:
+          description: "User successfully authenticated."
+          schema:
+            type: "string"
+            example: "OK"
+        500:
+          description: "Something went bad."
+          schema:
+            type: "string"
+            pattern: '^ERR .*$'
+            example: "ERR BACKEND_ERROR"
